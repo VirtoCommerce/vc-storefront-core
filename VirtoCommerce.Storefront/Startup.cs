@@ -335,21 +335,25 @@ namespace VirtoCommerce.Storefront
                 options.MaxAge = TimeSpan.FromDays(30);
             });
 
+            services.Configure<SwaggerOptions>(Configuration.GetSection("Swagger").Bind);
+
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Storefront REST API documentation", Version = "v1" });
                 c.IgnoreObsoleteProperties();
                 c.IgnoreObsoleteActions();
+                c.ParameterFilter<ParameterOrderFilter>();
+                c.RequestBodyFilter<NameAndOrderRequestBodyFilter>();
+                c.RequestBodyFilter<RequireRequestBodyFilter>();
                 // To include 401 response type to actions that requires Authorization
                 c.OperationFilter<AuthResponsesOperationFilter>();
                 c.OperationFilter<ConsumeFromBodyFilter>();
-                c.OperationFilter<FileResponseTypeFilter>();
-                c.OperationFilter<OptionalParametersFilter>();
                 c.OperationFilter<ArrayInQueryParametersFilter>();
+                c.OperationFilter<FileResponseTypeFilter>();
                 c.OperationFilter<FileUploadOperationFilter>();
                 c.SchemaFilter<EnumSchemaFilter>();
-                c.SchemaFilter<NewtonsoftJsonIgnoreFilter>();
+                c.SchemaGeneratorOptions.UseAllOfToExtendReferenceSchemas = true;
 
                 // Use method name as operation ID, i.e. ApiAccount.GetOrganization instead of /storefrontapi/account/organization (will be treated as just organization method)
                 c.CustomOperationIds(apiDesc => apiDesc.TryGetMethodInfo(out var methodInfo) ? methodInfo.Name : null);
@@ -357,6 +361,7 @@ namespace VirtoCommerce.Storefront
                 // To avoid errors with repeating type names
                 c.CustomSchemaIds(type => (Attribute.GetCustomAttribute(type, typeof(SwaggerSchemaIdAttribute)) as SwaggerSchemaIdAttribute)?.Id ?? type.FriendlyId());
             });
+            services.AddSwaggerGenNewtonsoftSupport();
 
             services.AddResponseCompression();
 
@@ -412,7 +417,12 @@ namespace VirtoCommerce.Storefront
             });
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger(c => c.RouteTemplate = "docs/{documentName}/docs.json");
+            app.UseSwagger(c =>
+            {
+                var options = app.ApplicationServices.GetService<IOptions<SwaggerOptions>>().Value;
+                c.SerializeAsV2 = options.Schema.OpenApiSpecificationVersion == OpenApiSpecificationVersion.V2;
+                c.RouteTemplate = "docs/{documentName}/docs.json";
+            });
 
             var rewriteOptions = new RewriteOptions();
             // Load IIS url rewrite rules from external file
