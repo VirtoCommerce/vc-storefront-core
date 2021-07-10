@@ -1,6 +1,7 @@
 namespace VirtoCommerce.Storefront.Tests.Features
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
 
     using Microsoft.Extensions.DependencyInjection;
@@ -114,7 +115,7 @@ namespace VirtoCommerce.Storefront.Tests.Features
             }
         }
 
-        private static JObject ReadSettingsFile(string defaultFileName = "test_data.json")
+        private static IDictionary<string, object> ReadSettingsFile(string defaultFileName = "test_data.json")
         {
             var currentDirectory = Environment.CurrentDirectory;
             var path = Path.Combine(currentDirectory, "Features", "Samples", defaultFileName);
@@ -123,7 +124,7 @@ namespace VirtoCommerce.Storefront.Tests.Features
             try
             {
                 var text = File.ReadAllText(fileInfo.FullName);
-                return JObject.Parse(text);
+                return JObject.Parse(text).ToObject<Dictionary<string, object>>();
             }
             catch (Exception e)
             {

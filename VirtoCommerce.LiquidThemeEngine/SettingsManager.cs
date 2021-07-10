@@ -70,20 +70,35 @@ namespace VirtoCommerce.LiquidThemeEngine
             }
 
             var currentPresetJsonToken = json.GetValue("current");
-            if (currentPresetJsonToken is JValue currentPresetJsonValue)
+            switch (currentPresetJsonToken)
             {
-                var presetName = currentPresetJsonValue.Value.ToString();
-                var currentPresetJson = result.Presets.FirstOrDefault(x => x.Name == presetName)?.Json;
-                if (currentPresetJson == null && result.Presets.Any())
+                case JValue currentPresetJsonValue:
                 {
-                    throw new StorefrontException($"Setting preset with name '{presetName}' not found");
+                    var presetName = currentPresetJsonValue.Value.ToString();
+                    var currentPresetJson = result.Presets.FirstOrDefault(x => x.Name == presetName)?.Json;
+                    if (currentPresetJson == null && result.Presets.Any())
+                    {
+                        throw new StorefrontException($"Setting preset with name '{presetName}' not found");
+                    }
+                    result.CurrentPreset.Name = presetName;
+                    result.CurrentPreset.Json = currentPresetJson ?? json;
+                    break;
                 }
-                result.CurrentPreset.Name = presetName;
-                result.CurrentPreset.Json = currentPresetJson ?? json;
+                case JObject currentPresetJson:
+                    result.CurrentPreset.Json = currentPresetJson;
+                    break;
             }
-            if (currentPresetJsonToken is JObject)
+
+            if (result.Presets.Any())
             {
-                result.CurrentPreset.Json = currentPresetJsonToken as JObject;
+                var globalSettings = json.Properties().Where(x => x.Name != "presets" && x.Name != "current");
+                foreach (var globalSetting in globalSettings)
+                {
+                    foreach (var preset in result.Presets)
+                    {
+                        preset.Json.Add(globalSetting.Name, globalSetting.Value);
+                    }
+                }
             }
 
             return result;

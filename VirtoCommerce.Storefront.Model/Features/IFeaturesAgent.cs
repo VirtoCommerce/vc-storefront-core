@@ -1,9 +1,9 @@
+using System.Collections.Generic;
+
 namespace VirtoCommerce.Storefront.Model.Features
 {
-    using Newtonsoft.Json.Linq;
-
     public interface IFeaturesAgent
     {
-        bool IsActive(string featureName, JObject jObject);
+        bool IsActive(string featureName, IDictionary<string, object> settings);
     }
 }

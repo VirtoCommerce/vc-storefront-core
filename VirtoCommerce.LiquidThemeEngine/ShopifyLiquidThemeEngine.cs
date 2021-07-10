@@ -518,7 +518,7 @@ namespace VirtoCommerce.LiquidThemeEngine
                 var compositeChangeToken = new CompositeChangeToken(tokens);
                 cacheEntry.AddExpirationToken(compositeChangeToken);
 
-                var settingJObject = InnerGetAllSettings(_themeBlobProvider, CurrentThemeSettingPath);
+                var settingJObject = GetSettings();
                 var result = _featuresAgent.IsActive(featureName, settingJObject);
                 return result;
             });
